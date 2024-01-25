@@ -32,24 +32,16 @@ def read_Imagefile(file_content: bytes):
     image = Image.open(BytesIO(file_content))
     return image
 
-def predict(image: Image.Image):
-
-    '''test_image = image.load_img('/content/datasets/val/glau/1 ('+str(i)+').png',                           target_size=(240,240))
-    test_image = image.img_to_array(test_image)'''
-
-    image = np.asarray(image.resize((240, 240)))[..., :3]
-
-    image = np.expand_dims(image, axis=0)
-    
-    # image = image / 127.5 - 1.0
-
-    result = decode_predictions(model.predict(image), 2)[0]
-    response = []
-    for i, res in enumerate(result):
-        resp = {}
-        resp["class"] = res[1]
-        resp["confidence"] = f"{res[2]*100:0.2f} %"
-        response.append(resp)
+def predict(image: Image.Image) -> dict:
+    model = load_model('glaucoma.h5')
+    test_image = image.resize((240,240))
+    test_image_array = np.array(test_image)
+    test_image_array = np.expand_dims(test_image_array, axis=0)
+    result = model.predict(test_image_array)
+    if result[0][0]!=1:
+        return {"Prediction": "Glaucoma"}
+    else:
+        return {"Prediction":"Normal"}
 
 @app.get("/")
 async def read_root():
@@ -84,12 +76,13 @@ async def create_upload_file(file: UploadFile = File(...)):
 
             print("===Read the Image===")
 
-            # prediction = predict(image)
 
-            # print("===Doing Prediction")
+            print("===Doing Prediction")
 
-            
-            return {"filename": file.filename, "file_path": str(file_path), "width": uploaded_image.width, "height": uploaded_image.height}
+            prediction_result = predict(uploaded_image)
+
+            # Return the prediction result as JSON response
+            return JSONResponse(content=prediction_result)
         
 
     except Exception as e:
