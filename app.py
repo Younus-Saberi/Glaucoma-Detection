@@ -56,14 +56,16 @@ async def read_item(item_id: int, q: Union[str, None] = None):
 @app.post("/api/upload")
 async def create_upload_file(file: UploadFile = File(...)):
     try:
+
         extensions = file.filename.split('.')[-1] in ("jpg","jpeg","png")
 
         if not extensions:
-            #TODO:change status code also
+            #TODO: convert image to suitable format 
              return JSONResponse(content={"error": "Image should in jpg, jpeg or png format"}, status_code=400)
         else:
             
             file_path = upload_dir / file.filename
+
             with file_path.open('wb') as buffer:
                 shutil.copyfileobj(file.file, buffer)
 
